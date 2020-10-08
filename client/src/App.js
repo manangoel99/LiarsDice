@@ -74,6 +74,7 @@ class App extends React.Component {
     this.setState({
       players: p,
       currPlayer: (this.state.currPlayer + 1) % 2,
+      displayDice: false
     });
   }
 
@@ -135,7 +136,13 @@ class App extends React.Component {
                 {this.state.players.map((p, i) => {
                   var k = [];
                   for (var j = 0; j < p.diceState.length; j++) {
-                    k.push(<ReactDice key={j} numDice={1} faceColor={this.colors[i]} defaultRoll={p.diceState[j]} />);
+                    k.push(<ReactDice 
+                        key={j} 
+                        numDice={1} 
+                        faceColor={this.colors[i]} 
+                        defaultRoll={p.diceState[j]}
+                        disableIndividual={true}
+                      />);
                   }
                   return (
                     <tr>
