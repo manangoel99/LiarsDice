@@ -92,42 +92,35 @@ class App extends React.Component {
     
   }
 
-  // displayDice = (d, i) => {
-    
-  // }
-
   render() {
     if (this.state.loading) return "Loading Drizzle...";
+    const style = {
+      width: '15px',
+      height: '15px',
+      border: '1px',
+      backgroundColor: this.colors[this.state.currPlayer]
+    }
     if (!this.state.displayDice) {
       return (
         <div className="App">
-          <ReadString
-            drizzle={this.props.drizzle}
-            drizzleState={this.state.drizzleState}
-          />
-          <SetString 
-            drizzle={this.props.drizzle}
-            drizzleState={this.state.drizzleState}
-          />
+          <div>
+            <div class='inline'><div>Current Player</div></div>
+            <div class='inline'><div style={style}></div></div>
+          </div>
+          {/* <div>Current Player : <div style={style}></div></div> */}
           {this.state.players.map((p, i) => <div key={i}>{p.diceState.toString()}</div>)}
           <button onClick={this.roll}>Click</button>
           <button onClick={this.showDice}>Show Dice</button>
-          {/* {dice} */}
-          {/* {dice.map(d => d.render())} */}
         </div>
       );
     }
     else {
       return(
       <div className="App">
-          <ReadString
-            drizzle={this.props.drizzle}
-            drizzleState={this.state.drizzleState}
-          />
-          <SetString 
-            drizzle={this.props.drizzle}
-            drizzleState={this.state.drizzleState}
-          />
+          <div>
+            <div class='inline'><div>Current Player</div></div>
+            <div class='inline'><div style={style}></div></div>
+          </div>
           {this.state.players.map(p => <div>{p.diceState.toString()}</div>)}
           <button onClick={this.roll}>Click</button>
           <button onClick={this.showDice}>Show Dice</button>
