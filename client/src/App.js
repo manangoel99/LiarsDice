@@ -34,6 +34,12 @@ class App extends React.Component {
     displayDice : false
   };
 
+  diceComps = [];
+  colors = [
+    '#FF3333',
+    '#7133FF'
+  ];
+
   componentDidMount() {
     const { drizzle } = this.props;
 
@@ -51,8 +57,11 @@ class App extends React.Component {
     var player = []
     for (var i = 0; i < this.state.numPlayers; i++) {
       player.push(new Players());
+      this.diceComps.push(<ReactDice numDice={5} disableIndividual={false}/>);
     }
     this.setState({players: player});
+
+
   }
 
   componentWillUnmount() {
@@ -69,30 +78,79 @@ class App extends React.Component {
   }
 
   showDice = () => {
-    this.setState({
-      displayDice: true,
-    });
+    if (this.state.displayDice == false) {
+      this.setState({
+        displayDice: true,
+      });
+    }
+    else {
+      this.setState({
+        displayDice: false,
+      });
+    }
+    
   }
+
+  // displayDice = (d, i) => {
+    
+  // }
 
   render() {
     if (this.state.loading) return "Loading Drizzle...";
-    return (
+    if (!this.state.displayDice) {
+      return (
+        <div className="App">
+          <ReadString
+            drizzle={this.props.drizzle}
+            drizzleState={this.state.drizzleState}
+          />
+          <SetString 
+            drizzle={this.props.drizzle}
+            drizzleState={this.state.drizzleState}
+          />
+          {this.state.players.map((p, i) => <div key={i}>{p.diceState.toString()}</div>)}
+          <button onClick={this.roll}>Click</button>
+          <button onClick={this.showDice}>Show Dice</button>
+          {/* {dice} */}
+          {/* {dice.map(d => d.render())} */}
+        </div>
+      );
+    }
+    else {
+      return(
       <div className="App">
-        <ReadString
-          drizzle={this.props.drizzle}
-          drizzleState={this.state.drizzleState}
-        />
-        <SetString 
-          drizzle={this.props.drizzle}
-          drizzleState={this.state.drizzleState}
-        />
-        {this.state.players.map(p => <div>{p.diceState.toString()}</div>)}
-        <button onClick={this.roll}>Click</button>
-        <button onClick={this.showDice}>Show Dice</button>
-        {/* {dice} */}
-        {/* {dice.map(d => d.render())} */}
-      </div>
-    );
+          <ReadString
+            drizzle={this.props.drizzle}
+            drizzleState={this.state.drizzleState}
+          />
+          <SetString 
+            drizzle={this.props.drizzle}
+            drizzleState={this.state.drizzleState}
+          />
+          {this.state.players.map(p => <div>{p.diceState.toString()}</div>)}
+          <button onClick={this.roll}>Click</button>
+          <button onClick={this.showDice}>Show Dice</button>
+          <div>
+            <table>
+                {this.state.players.map((p, i) => {
+                  var k = [];
+                  for (var j = 0; j < p.diceState.length; j++) {
+                    k.push(<ReactDice key={j} numDice={1} faceColor={this.colors[i]} defaultRoll={p.diceState[j]} />);
+                  }
+                  return (
+                    <tr>
+                      {k.map(t => {
+                        return (<td>{t}</td>)
+                      })}
+                    </tr>
+                  )
+                })}
+            </table>
+          </div>
+        </div>
+      );
+    }
+    
   }
 }
 
