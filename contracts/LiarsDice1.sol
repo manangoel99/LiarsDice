@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-contract LiarsDice {
+contract LiarsDice1 {
     uint numPlayers;
     uint playerCount;
     uint numDice;

@@ -31,7 +31,7 @@ class App extends React.Component {
     numPlayers: 2, 
     players: [], 
     currPlayer : 0,
-    displayDice : false
+    displayDice : false,
   };
 
   diceComps = [];
@@ -54,15 +54,25 @@ class App extends React.Component {
         this.setState({ loading: false, drizzleState });
       }
     });
-    var player = []
+    var player = [];
     for (var i = 0; i < this.state.numPlayers; i++) {
       player.push(new Players());
-      this.diceComps.push(<ReactDice numDice={5} disableIndividual={false}/>);
     }
     this.setState({players: player});
-
-
   }
+
+  createPlayer = () => {
+    const {drizzle} = this.props;
+    const drizzleState = drizzle.store.getState();
+    const contract = drizzle.contracts.LiarsDice1;
+    for (var i = 0; i < this.state.numPlayers; i++) {
+      const stackId = contract.methods["createPlayer"].cacheSend("vovo", {
+        from: drizzleState.accounts[i],
+        gas: 300000
+      });
+    }
+  }
+
 
   componentWillUnmount() {
     this.unsubscribe();
@@ -92,6 +102,23 @@ class App extends React.Component {
     
   }
 
+  handleKeyDown = e => {
+    if (e.keyCode === 13) {
+      var string = e.target.value.split(" ");
+      var value = parseInt(string[0]);
+      var count = parseInt(string[1]);
+
+      const {drizzle} = this.props;
+      const drizzleState = drizzle.store.getState();
+      const contract = drizzle.contracts.LiarsDice1;
+      var stackID = contract.methods["placeBid"].cacheSend(value, count, {
+        from: drizzleState.accounts[this.state.currPlayer],
+        gas: 300000
+      });
+      console.log(stackID);
+    }
+  }
+
   render() {
     if (this.state.loading) return "Loading Drizzle...";
     const style = {
@@ -104,13 +131,17 @@ class App extends React.Component {
       return (
         <div className="App">
           <div>
-            <div class='inline'><div>Current Player</div></div>
-            <div class='inline'><div style={style}></div></div>
+            <div className='inline'><div>Current Player</div></div>
+            <div className='inline'><div style={style}></div></div>
           </div>
           {/* <div>Current Player : <div style={style}></div></div> */}
           {this.state.players.map((p, i) => <div key={i}>{p.diceState.toString()}</div>)}
           <button onClick={this.roll}>Click</button>
           <button onClick={this.showDice}>Show Dice</button>
+          <button onClick={this.createPlayer}>Create Players</button>
+          <div>
+            <input type="text" onKeyDown={this.handleKeyDown}/>
+          </div>
         </div>
       );
     }
