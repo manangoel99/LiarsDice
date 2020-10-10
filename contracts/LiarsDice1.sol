@@ -36,7 +36,7 @@ contract LiarsDice1 {
     Bid currentBid;
 
     constructor() public {
-        numPlayers = 2;
+        numPlayers = 4;
         numDice = 5;
         playerCount = 0;
         currentBid = Bid(msg.sender, 0, 0);

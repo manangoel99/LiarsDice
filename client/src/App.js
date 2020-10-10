@@ -28,16 +28,19 @@ class App extends React.Component {
   state = { 
     loading: true, 
     drizzleState: null, 
-    numPlayers: 2, 
+    numPlayers: 4, 
     players: [], 
     currPlayer : 0,
     displayDice : false,
+    challengeStatus: true,
   };
 
   diceComps = [];
   colors = [
     '#FF3333',
-    '#7133FF'
+    '#7133FF',
+    '#46FF33',
+    '#FF33B2'
   ];
 
   componentDidMount() {
@@ -83,7 +86,7 @@ class App extends React.Component {
     p[this.state.currPlayer].roll()
     this.setState({
       players: p,
-      currPlayer: (this.state.currPlayer + 1) % 2,
+      currPlayer: (this.state.currPlayer + 1) % (this.state.numPlayers),
       displayDice: false
     });
   }
@@ -102,7 +105,7 @@ class App extends React.Component {
     
   }
 
-  handleKeyDown = e => {
+  submitBid = e => {
     if (e.keyCode === 13) {
       var string = e.target.value.split(" ");
       var value = parseInt(string[0]);
@@ -116,7 +119,42 @@ class App extends React.Component {
         gas: 300000
       });
       console.log(stackID);
+      this.setState({
+        currPlayer: (this.state.currPlayer + 1) % (this.state.numPlayers)
+      })
     }
+  }
+
+  challenge = () => {
+    const {drizzle} = this.props;
+    const drizzleState = drizzle.store.getState();
+    const contract = drizzle.contracts.LiarsDice1;
+
+    // const dataKey = contract.methods["getAllDiceVals"].cacheCall({
+    //   from: drizzleState.accounts[this.state.currPlayer],
+    //   gas: 300000
+    // });
+    const challengeId = contract.methods['Challenge'].cacheSend({
+      from : drizzleState.accounts[this.state.currPlayer],
+      gas: 300000
+    })
+    this.setState({
+      challengeId: challengeId,
+      challengeStatus: false
+    });
+    // console.log(drizzleState.contracts.LiarsDice1.storedData[dataKey].value);
+  }
+
+  getChallengeStatus = () => {
+    const {drizzle} = this.props;
+    const drizzleState = drizzle.store.getState();
+
+    // get the transaction hash using our saved `stackId`
+    const txHash = drizzleState.transactionStack[this.state.challengeId];
+    console.log(txHash);
+    // if transaction hash does not exist, don't display anything
+    if (!txHash) return null;
+    return `Challenge Status : ${drizzleState.transactions[txHash] && drizzleState.transactions[txHash].status}`
   }
 
   render() {
@@ -140,8 +178,10 @@ class App extends React.Component {
           <button onClick={this.showDice}>Show Dice</button>
           <button onClick={this.createPlayer}>Create Players</button>
           <div>
-            <input type="text" onKeyDown={this.handleKeyDown}/>
+            <input type="text" onKeyDown={this.submitBid}/>
           </div>
+          <button onClick={this.challenge}>Challenge</button>
+          <div>{this.getChallengeStatus()}</div>
         </div>
       );
     }
@@ -149,14 +189,15 @@ class App extends React.Component {
       return(
       <div className="App">
           <div>
-            <div class='inline'><div>Current Player</div></div>
-            <div class='inline'><div style={style}></div></div>
+            <div className='inline'><div>Current Player</div></div>
+            <div className='inline'><div style={style}></div></div>
           </div>
-          {this.state.players.map(p => <div>{p.diceState.toString()}</div>)}
+          {this.state.players.map((p, i) => <div key={i}>{p.diceState.toString()}</div>)}
           <button onClick={this.roll}>Click</button>
           <button onClick={this.showDice}>Show Dice</button>
           <div>
             <table>
+              <tbody>
                 {this.state.players.map((p, i) => {
                   var k = [];
                   for (var j = 0; j < p.diceState.length; j++) {
@@ -166,16 +207,18 @@ class App extends React.Component {
                         faceColor={this.colors[i]} 
                         defaultRoll={p.diceState[j]}
                         disableIndividual={true}
+                        dotColor={'#000000'}
                       />);
                   }
                   return (
-                    <tr>
-                      {k.map(t => {
-                        return (<td>{t}</td>)
+                    <tr key={i}>
+                      {k.map((t, idx) => {
+                        return (<td key={idx}>{t}</td>)
                       })}
                     </tr>
                   )
                 })}
+              </tbody>
             </table>
           </div>
         </div>
