@@ -200,17 +200,40 @@ class App extends React.Component {
     //   from: drizzleState.accounts[this.state.currPlayer],
     //   gas: 300000
     // });
-    const challengeId = contract.methods['Challenge'].cacheSend({
-      from : drizzleState.accounts[this.state.currPlayer],
-      gas: 300000
-    })
-    this.setState({
-      challengeId: challengeId,
-      challengeStatus: false
-    });
+    var txHash2 = drizzleState.transactionStack[this.state.bidID];
+    if(drizzleState.transactions[txHash2].status == 'pending'){
+      alert("PLEASE WAIT FOR FEW SECONDS")
+    }
+    else{
+      console.log("in challenge")
+      const challengeId = contract.methods['Challenge'].cacheSend({
+        from : drizzleState.accounts[this.state.currPlayer],
+        gas: 3000000
+      })
+      // console.log(challengeId);
+      this.setState({challengeId});
+    }
     // console.log(drizzleState.contracts.LiarsDice1.storedData[dataKey].value);
   }
 
+  showAllDice = () => {
+    const {drizzle} = this.props;
+    const drizzleState = drizzle.store.getState();
+    const contract = drizzle.contracts.LiarsDice1;
+
+    var txHash3 = drizzleState.transactionStack[this.state.challengeId];
+    if(drizzleState.transactions[txHash3].status == 'pending'){
+      alert("PLEASE WAIT FOR FEW SECONDS")
+    }
+    else{
+
+      var alldice = contract.methods["getAllDiceVals"].cacheCall();
+      console.log(drizzleState.contracts.LiarsDice1.getAllDiceVals[alldice].value);
+
+      var challengeStat = contract.methods["ChallengeResult"].cacheCall();
+      console.log(drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat].value)
+    }
+  }
   getChallengeStatus = () => {
     const {drizzle} = this.props;
     const drizzleState = drizzle.store.getState();
@@ -253,7 +276,8 @@ class App extends React.Component {
             
           </div>
           <button onClick={this.challenge}>Challenge</button>
-          <div>{this.getChallengeStatus()}</div>
+          <button onClick={this.showAllDice}>Show all dice</button>
+          
         </div>
       );
     }
