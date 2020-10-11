@@ -43,6 +43,10 @@ class App extends React.Component {
     dataKey: null,
     currBidCount: 0,
     currBidValue: 0,
+    b1: false,
+    b2: false,
+    b3: true,
+    currentLoser: null,
   };
 
   diceComps = [];
@@ -105,6 +109,7 @@ class App extends React.Component {
       // console.log(pID);
     }
     this.setState({pID});
+    this.setState({b3: false});
     // console.log(this.state)
   }
 
@@ -168,6 +173,8 @@ class App extends React.Component {
           alert("Try again in few seconds.");
         }
         else if(drizzleState.transactions[txHash1].status == 'error'){
+          this.setState({bidID: -1})
+          this.setState({currPlayer: (this.state.currPlayer - 1 + this.state.numPlayers) % this.state.numPlayers})
           alert("Wrong bid placed, please bid again");
         }
         else{
@@ -182,8 +189,18 @@ class App extends React.Component {
           console.log("after placeBid 1");
           this.setState({bidID});
 
+          var idx = (this.state.currPlayer + 1) % (this.state.numPlayers);
+          console.log("a",idx);
+
+          while (this.state.players[idx].numDice === 0){
+            idx = (idx+1) % this.state.numPlayers;
+            console.log("a",idx);
+          }
+          if(idx == this.state.currPlayer){
+            alert("player" + idx + " has won the game")
+          }
           this.setState({
-            currPlayer: (this.state.currPlayer + 1) % (this.state.numPlayers)
+            currPlayer: idx
           })
         }
       }
@@ -200,9 +217,18 @@ class App extends React.Component {
 
         this.setState({bidID});
 
+        var idx = (this.state.currPlayer + 1) % (this.state.numPlayers);
+        console.log("b",idx)
+        while (this.state.players[idx].numDice === 0){
+          idx = (idx+1) % this.state.numPlayers;
+          console.log("b",idx)
+        }
         this.setState({
-          currPlayer: (this.state.currPlayer + 1) % (this.state.numPlayers)
+          currPlayer: idx
         })
+        if(idx == this.state.currPlayer){
+          alert("player" + idx + " has won the game")
+        }
       }
     }
     else{
@@ -233,6 +259,7 @@ class App extends React.Component {
       })
       // console.log(challengeId);
       this.setState({challengeId});
+      this.setState({b1: true});
     }
     // console.log(drizzleState.contracts.LiarsDice1.storedData[dataKey].value);
   }
@@ -287,20 +314,25 @@ class App extends React.Component {
           displayDice: true,
         });
         // console.log(drizzleState.contracts.LiarsDice1.getAllDiceVals[alldice].value)
-        // console.log(drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat].value)
-        if (drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat].value === true) {
+        console.log(drizzleState.contracts.LiarsDice1)
+        console.log(drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat].value)
+        if (drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat].value[0] === true) {
           alert("Previous bid was incorrect!!! He loses one dice");
           var prevPlayer = this.state.currPlayer == 0 ? this.state.numPlayers - 1 : this.state.currPlayer - 1;
+          console.log("pp",prevPlayer)
           players[prevPlayer].numDice -= 1;
+          this.setState({currentLoser: prevPlayer});
         }
         else {
           alert("Previous bid was correct!!! You lose one dice");
           players[this.state.currPlayer].numDice -= 1;
+          this.setState({currentLoser: this.state.currPlayer});
         }
         this.setState({
           players: players,
           displayDice: true,
         });
+        this.setState({b2: true});
       }
       // if(!drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat]){
       //   alert("nahi hai nahi hai")
@@ -320,6 +352,9 @@ class App extends React.Component {
       from : drizzleState.accounts[this.state.currPlayer],
       gas: 300000
     })
+    this.setState({b1: false});
+    this.setState({b2: false});
+    this.setState({displayDice: false});
   }
 
   getChallengeStatus = () => {
@@ -371,12 +406,12 @@ class App extends React.Component {
     var y0 = 197;
     var points = [];
     for (var i = 0; i < this.state.numPlayers; i++) {
-      points.push([x0 + 200 * Math.cos(2 * Math.PI * i / this.state.numPlayers), y0 + 100 * Math.sin(2 * Math.PI * i / this.state.numPlayers)]);
+      points.push([x0 + 200 * Math.cos(2 * Math.PI * i / this.state.numPlayers), y0 + 200 * Math.sin(2 * Math.PI * i / this.state.numPlayers)]);
     }
     // const pointStyle = {
     //   left: 
     // }
-    console.log(points);
+    // console.log(points);
     if (!this.state.displayDice) {
       return (
         <div className="App container">
@@ -468,21 +503,16 @@ class App extends React.Component {
               {/* </DropdownButton> */}
               {/* <div>Current Player : <div style={style}></div></div> */}
               {this.state.players.map((p, i) => <div key={i}>{p.diceState.toString()}</div>)}
-              <button onClick={this.roll}>Click</button>
-              <button onClick={this.showDice}>Show Dice</button>
-              <button onClick={this.createPlayer}>Create Players</button>
+              {this.state.b3 && <button onClick={this.createPlayer}>Create Players</button>}
               <div>
               <form onSubmit={this.submitBid}>
-                <label>
-                  Name:
-                  <input type="text" value={this.state.value} onChange={this.handleChange} /> </label>
                   <input type="submit" value="Submit" />
               </form>
             
               </div>
               <button onClick={this.challenge}>Challenge</button>
-              <button onClick={this.showAllDice}>Show all dice</button>
-              <button onClick={this.shuffleAll}>Shuffle all dice</button>
+              {this.state.b1 && <button onClick={this.showAllDice}>Show all dice</button>}
+              {this.state.b2 && <button onClick={this.shuffleAll}>Shuffle all dice</button>}
               </div>
           </div>          
         </div>
@@ -579,21 +609,16 @@ class App extends React.Component {
               {/* </DropdownButton> */}
               {/* <div>Current Player : <div style={style}></div></div> */}
               {this.state.players.map((p, i) => <div key={i}>{p.diceState.toString()}</div>)}
-              <button onClick={this.roll}>Click</button>
-              <button onClick={this.showDice}>Show Dice</button>
-              <button onClick={this.createPlayer}>Create Players</button>
+              {this.state.b3 && <button onClick={this.createPlayer}>Create Players</button>}
               <div>
               <form onSubmit={this.submitBid}>
-                <label>
-                  Name:
-                  <input type="text" value={this.state.value} onChange={this.handleChange} /> </label>
                   <input type="submit" value="Submit" />
               </form>
             
               </div>
               <button onClick={this.challenge}>Challenge</button>
-              <button onClick={this.showAllDice}>Show all dice</button>
-              <button onClick={this.shuffleAll}>Shuffle all dice</button>
+              {this.state.b1 && <button onClick={this.showAllDice}>Show all dice</button>}
+              {this.state.b2 && <button onClick={this.shuffleAll}>Shuffle all dice</button>}
               </div>
           </div>    
           <div className='row'>
@@ -602,7 +627,11 @@ class App extends React.Component {
               <tbody>
                 {this.state.players.map((p, i) => {
                   var k = [];
-                  for (var j = 0; j < p.numDice; j++) {
+                  var n = p.numDice;
+                  for (var j = 0; j < 5; j++) {
+                    if(p.diceState[j] == 0){
+                      continue;
+                    }
                     k.push(<ReactDice 
                         key={j} 
                         numDice={1} 
@@ -625,41 +654,6 @@ class App extends React.Component {
             </div>
           </div>      
         </div>
-      // <div className="App">
-      //     <div>
-      //       <div className='inline'><div>Current Player</div></div>
-      //       <div className='inline'><div style={style}></div></div>
-      //     </div>
-      //     {this.state.players.map((p, i) => <div key={i}>{p.diceState.toString()}</div>)}
-      //     <button onClick={this.roll}>Click</button>
-      //     <button onClick={this.showDice}>Show Dice</button>
-      //     <div>
-            // <table>
-            //   <tbody>
-            //     {this.state.players.map((p, i) => {
-            //       var k = [];
-            //       for (var j = 0; j < p.numDice; j++) {
-            //         k.push(<ReactDice 
-            //             key={j} 
-            //             numDice={1} 
-            //             faceColor={this.colors[i]} 
-            //             defaultRoll={p.diceState[j]}
-            //             disableIndividual={true}
-            //             dotColor={'#000000'}
-            //           />);
-            //       }
-            //       return (
-            //         <tr key={i}>
-            //           {k.map((t, idx) => {
-            //             return (<td key={idx}>{t}</td>)
-            //           })}
-            //         </tr>
-            //       )
-            //     })}
-            //   </tbody>
-            // </table>
-      //     </div>
-      //   </div>
       );
     }
     
