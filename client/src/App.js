@@ -35,6 +35,13 @@ class App extends React.Component {
     currPlayer : 0,
     displayDice : false,
     challengeStatus: true,
+    ids: null,
+    status: [],
+    value: '',
+    bidID: -1,
+    dataKey: null,
+    currBidCount: 0,
+    currBidValue: 0,
   };
 
   diceComps = [];
@@ -79,18 +86,25 @@ class App extends React.Component {
     //   var instances = M.Dropdown.init(elems, options);
     // });
     this.setState({players: player});
-  }
+    this.handleChange = this.handleChange.bind(this);
 
+  }
+  handleChange(event) {    this.setState({value: event.target.value});  }
   createPlayer = () => {
     const {drizzle} = this.props;
     const drizzleState = drizzle.store.getState();
     const contract = drizzle.contracts.LiarsDice1;
+    var pID = [];
     for (var i = 0; i < this.state.numPlayers; i++) {
       const stackId = contract.methods["createPlayer"].cacheSend("vovo", {
         from: drizzleState.accounts[i],
         gas: 300000
       });
+      pID.push(stackId);
+      // console.log(pID);
     }
+    this.setState({pID});
+    // console.log(this.state)
   }
 
 
@@ -123,22 +137,76 @@ class App extends React.Component {
   }
 
   submitBid = e => {
-    if (e.keyCode === 13) {
-      var string = e.target.value.split(" ");
+    const {drizzle} = this.props;
+    const drizzleState = drizzle.store.getState();
+    console.log(this.state)
+    e.preventDefault();
+    // console.log(drizzleState.transactionStack)
+    // var a = drizzleState.transactionStack[0]
+    // console.log(drizzleState.transactions[a].status == 'success')
+    var proceed = 0;
+    for(var i=0; i<this.state.pID.length; i++){
+      // console.log("hello", i)
+      var txHash = drizzleState.transactionStack[this.state.pID[i]];
+      if(txHash && drizzleState.transactions[txHash].status == 'success'){
+        proceed += 1;
+      }
+    }
+    if(proceed == this.state.numPlayers){
+      console.log("you may continue");
+      var string = this.state.value.split(" ");
       var value = parseInt(string[0]);
       var count = parseInt(string[1]);
+      // console.log(string)
 
-      const {drizzle} = this.props;
-      const drizzleState = drizzle.store.getState();
       const contract = drizzle.contracts.LiarsDice1;
-      var stackID = contract.methods["placeBid"].cacheSend(value, count, {
-        from: drizzleState.accounts[this.state.currPlayer],
-        gas: 300000
-      });
-      console.log(stackID);
-      this.setState({
-        currPlayer: (this.state.currPlayer + 1) % (this.state.numPlayers)
-      })
+      if(this.state.bidID != -1){
+        var txHash1 = drizzleState.transactionStack[this.state.bidID];
+        console.log(txHash1, drizzleState.transactions[txHash1].status)
+        if(drizzleState.transactions[txHash1].status == 'pending'){
+          alert("Try again in few seconds.");
+        }
+        else if(drizzleState.transactions[txHash1].status == 'error'){
+          alert("Wrong bid placed, please bid again");
+        }
+        else{
+          var bidbid = contract.methods["getBid"].cacheCall();
+          console.log(contract);
+          console.log(drizzleState.contracts.LiarsDice1.getBid[bidbid].value)
+          // console.log(bidbid)
+          var bidID = contract.methods["placeBid"].cacheSend(this.state.currBidValue, this.state.currBidCount, {
+            from: drizzleState.accounts[this.state.currPlayer],
+            gas: 300000
+          });
+          console.log("after placeBid 1");
+          this.setState({bidID});
+
+          this.setState({
+            currPlayer: (this.state.currPlayer + 1) % (this.state.numPlayers)
+          })
+        }
+      }
+      else{
+        var bidbid = contract.methods["getBid"].cacheCall();
+        console.log(contract)
+        // console.log(drizzleState.contracts.LiarsDice1.getBid[bidbid].value)
+        // console.log(bidbid)
+        var bidID = contract.methods["placeBid"].cacheSend(this.state.currBidValue, this.state.currBidCount, {
+          from: drizzleState.accounts[this.state.currPlayer],
+          gas: 300000
+        });
+          console.log("after placeBid 2");
+
+        this.setState({bidID});
+
+        this.setState({
+          currPlayer: (this.state.currPlayer + 1) % (this.state.numPlayers)
+        })
+      }
+    }
+    else{
+      alert("Please wait for few seconds!")
+      console.log("please wait");
     }
   }
 
@@ -152,15 +220,66 @@ class App extends React.Component {
     //   from: drizzleState.accounts[this.state.currPlayer],
     //   gas: 300000
     // });
-    const challengeId = contract.methods['Challenge'].cacheSend({
-      from : drizzleState.accounts[this.state.currPlayer],
-      gas: 3000000
-    });
+    var txHash2 = drizzleState.transactionStack[this.state.bidID];
+    if(drizzleState.transactions[txHash2].status == 'pending'){
+      alert("PLEASE WAIT FOR FEW SECONDS")
+    }
+    else{
+      console.log("in challenge")
+      const challengeId = contract.methods['Challenge'].cacheSend({
+        from : drizzleState.accounts[this.state.currPlayer],
+        gas: 300000
+      })
+      // console.log(challengeId);
+      this.setState({challengeId});
+    }
+    // console.log(drizzleState.contracts.LiarsDice1.storedData[dataKey].value);
+  }
 
-    this.setState({
-      challengeId: challengeId,
-      challengeStatus: false
-    });
+  showAllDice = () => {
+    const {drizzle} = this.props;
+    const drizzleState = drizzle.store.getState();
+    const contract = drizzle.contracts.LiarsDice1;
+
+    var txHash3 = drizzleState.transactionStack[this.state.challengeId];
+    if(drizzleState.transactions[txHash3].status != 'success'){
+      alert("PLEASE WAIT FOR FEW SECONDS")
+    }
+    else{
+      var alldice = contract.methods["getAllDiceVals"].cacheCall();
+      var challengeStat = contract.methods["ChallengeResult"].cacheCall();
+      // console.log(alldice)
+      // console.log(drizzleState.contracts.LiarsDice1);
+      // var bidbid = contract.methods["getBid"].cacheCall();
+      // console.log(contract);
+      // console.log(drizzleState.contracts.LiarsDice1.getBid[bidbid].value)
+      // console.log(challengeStat)
+      // console.log(drizzleState.contracts.LiarsDice1)
+      if(!drizzleState.contracts.LiarsDice1.getAllDiceVals[alldice] || !drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat]){
+        alert("Please wait")
+      }
+      else{
+        console.log(drizzleState.contracts.LiarsDice1.getAllDiceVals[alldice].value)
+        console.log(drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat].value)
+      }
+      // if(!drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat]){
+      //   alert("nahi hai nahi hai")
+      // }
+      // else{
+      // }
+    }
+  }
+
+  shuffleAll = () => {
+    const {drizzle} = this.props;
+    const drizzleState = drizzle.store.getState();
+    const contract = drizzle.contracts.LiarsDice1;
+
+    console.log("in challenge")
+    const challengeId = contract.methods['shuffleAll'].cacheSend({
+      from : drizzleState.accounts[this.state.currPlayer],
+      gas: 300000
+    })
   }
 
   getChallengeStatus = () => {
@@ -169,11 +288,23 @@ class App extends React.Component {
 
     // get the transaction hash using our saved `stackId`
     const txHash = drizzleState.transactionStack[this.state.challengeId];
-    console.log(txHash);
+    // console.log(txHash);
     // if transaction hash does not exist, don't display anything
     if (!txHash) return null;
  
     return `Challenge Status : ${drizzleState.transactions[txHash] && drizzleState.transactions[txHash].status}`
+  }
+
+  handleValUpdate = (val) => {
+    this.setState({
+      currBidValue: val
+    });
+  }
+
+  handleCountUpdate = (count) => {
+    this.setState({
+      currBidCount: count
+    });
   }
 
   render() {
@@ -253,10 +384,15 @@ class App extends React.Component {
               >
                 {[1, 2, 3, 4, 5, 6].map(val => {
                   return (
-                    <Dropdown.Item eventKey={val}>{val}</Dropdown.Item>
+                    <Dropdown.Item onClick={() => this.handleValUpdate(val)} key={val} eventKey={val}>{val}</Dropdown.Item>
                   )
                 })}
               </DropdownButton>
+              &nbsp;
+              &nbsp;
+              &nbsp;
+              &nbsp;
+              &nbsp;
               <DropdownButton
                 as={ButtonGroup}
                 key={"Count"}
@@ -265,7 +401,7 @@ class App extends React.Component {
               >
                 {Array.from(Array(5 * this.state.numPlayers).keys()).map(count => {
                   return (
-                    <Dropdown.Item eventKey={count}>{count}</Dropdown.Item>
+                    <Dropdown.Item onClick={() => this.handleCountUpdate(count)} key={count} eventKey={count}>{count}</Dropdown.Item>
                   )
                 })}
               </DropdownButton>
@@ -296,12 +432,19 @@ class App extends React.Component {
               <button onClick={this.showDice}>Show Dice</button>
               <button onClick={this.createPlayer}>Create Players</button>
               <div>
-                <input type="text" onKeyDown={this.submitBid}/>
+              <form onSubmit={this.submitBid}>
+                <label>
+                  Name:
+                  <input type="text" value={this.state.value} onChange={this.handleChange} /> </label>
+                  <input type="submit" value="Submit" />
+              </form>
+            
               </div>
               <button onClick={this.challenge}>Challenge</button>
-              <div>{this.getChallengeStatus()}</div>
-            </div>
-          </div>
+              <button onClick={this.showAllDice}>Show all dice</button>
+              <button onClick={this.shuffleAll}>Shuffle all dice</button>
+              </div>
+          </div>          
         </div>
       );
     }
