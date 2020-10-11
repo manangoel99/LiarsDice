@@ -13,6 +13,7 @@ import {DropdownButton, Dropdown, ButtonGroup} from 'react-bootstrap';
 class Players {
   constructor() {
     this.diceState = [-1, -1, -1, -1, -1];
+    this.numDice = 5;
   }
   roll = () => {
     var t = [
@@ -259,8 +260,47 @@ class App extends React.Component {
         alert("Please wait")
       }
       else{
-        console.log(drizzleState.contracts.LiarsDice1.getAllDiceVals[alldice].value)
-        console.log(drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat].value)
+        var players = this.state.players;
+        var diceVals = drizzleState.contracts.LiarsDice1.getAllDiceVals[alldice].value;
+
+
+        for (var i = 0; i < diceVals.length; i+=5) {
+          players[parseInt(i/5)].diceState[0] = diceVals[i];
+          players[parseInt(i/5)].diceState[1] = diceVals[i + 1];
+          players[parseInt(i/5)].diceState[2] = diceVals[i + 2];
+          players[parseInt(i/5)].diceState[3] = diceVals[i + 3];
+          players[parseInt(i/5)].diceState[4] = diceVals[i + 4];
+
+          var arr = [
+            diceVals[i],
+            diceVals[i + 1],
+            diceVals[i + 2],
+            diceVals[i + 3],
+            diceVals[i + 4]
+          ];
+
+          // players[parseInt(i/5)].numDice = 5 - arr.filter(v => v === 0).length; 
+        }
+
+        this.setState({
+          players: players,
+          displayDice: true,
+        });
+        // console.log(drizzleState.contracts.LiarsDice1.getAllDiceVals[alldice].value)
+        // console.log(drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat].value)
+        if (drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat].value === true) {
+          alert("Previous bid was incorrect!!! He loses one dice");
+          var prevPlayer = this.state.currPlayer == 0 ? this.state.numPlayers - 1 : this.state.currPlayer - 1;
+          players[prevPlayer].numDice -= 1;
+        }
+        else {
+          alert("Previous bid was correct!!! You lose one dice");
+          players[this.state.currPlayer].numDice -= 1;
+        }
+        this.setState({
+          players: players,
+          displayDice: true,
+        });
       }
       // if(!drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat]){
       //   alert("nahi hai nahi hai")
@@ -450,20 +490,119 @@ class App extends React.Component {
     }
     else {
       return(
-      <div className="App">
-          <div>
-            <div className='inline'><div>Current Player</div></div>
-            <div className='inline'><div style={style}></div></div>
-          </div>
-          {this.state.players.map((p, i) => <div key={i}>{p.diceState.toString()}</div>)}
-          <button onClick={this.roll}>Click</button>
-          <button onClick={this.showDice}>Show Dice</button>
-          <div>
+        <div className="App container">
+          <div className="row">
+            <div className="col-sm-6">
+            <div style={circleStyle}>
+              {points.map((p, i) => {
+                if (i == this.state.currPlayer) {
+                  var pointStyle = {
+                    left: p[0] + 'px',
+                    top: p[1] + 'px',
+                    width:'10px',
+                    height:'10px',
+                    background: this.colors[i],
+                    borderRadius: '10px',
+                    position:'absolute',
+                  };
+                }
+                else {
+                  var pointStyle = {
+                    left: p[0] + 'px',
+                    top: p[1] + 'px',
+                    width:'10px',
+                    height:'10px',
+                    background: 'blue',
+                    borderRadius: '10px',
+                    position:'absolute',
+                  };
+                }  
+                return <div key={i} className='point' style={pointStyle}></div>
+              })}
+            </div>
+            </div>
+            <div  className='col-sm-6'>
+              <div>
+                <div className='inline'><div>Current Player</div></div>
+                <div className='inline'><div style={style}></div></div>
+              </div>
+              <div>
+              <DropdownButton
+                as={ButtonGroup}
+                key={"Value"}
+                id={`dropdown-variant-primary`}
+                title={"value"}
+              >
+                {[1, 2, 3, 4, 5, 6].map(val => {
+                  return (
+                    <Dropdown.Item onClick={() => this.handleValUpdate(val)} key={val} eventKey={val}>{val}</Dropdown.Item>
+                  )
+                })}
+              </DropdownButton>
+              &nbsp;
+              &nbsp;
+              &nbsp;
+              &nbsp;
+              &nbsp;
+              <DropdownButton
+                as={ButtonGroup}
+                key={"Count"}
+                id={`dropdown-variant-secondary`}
+                title={"Count"}
+              >
+                {Array.from(Array(5 * this.state.numPlayers).keys()).map(count => {
+                  return (
+                    <Dropdown.Item onClick={() => this.handleCountUpdate(count)} key={count} eventKey={count}>{count}</Dropdown.Item>
+                  )
+                })}
+              </DropdownButton>
+              </div>
+              {/* <DropdownButton id="dropdown-basic-button" title="Dropdown button"> */}
+                {/* {['Value', 'Count'].map(variant => {
+                  if (variant === 'Value') {
+                    return (
+                      <DropdownButton 
+                      as={ButtonGroup} 
+                      key={variant}
+                      id={`dropdown-variant-primary`}
+                      variant={variant.toLowerCase()}
+                      title={variant}
+                      >
+                        {}
+                      </DropdownButton>
+                    )
+                  }
+                })} */}
+                {/* <Dropdown.Item href="#/action-1">Action</Dropdown.Item>
+                <Dropdown.Item href="#/action-2">Another action</Dropdown.Item>
+                <Dropdown.Item href="#/action-3">Something else</Dropdown.Item> */}
+              {/* </DropdownButton> */}
+              {/* <div>Current Player : <div style={style}></div></div> */}
+              {this.state.players.map((p, i) => <div key={i}>{p.diceState.toString()}</div>)}
+              <button onClick={this.roll}>Click</button>
+              <button onClick={this.showDice}>Show Dice</button>
+              <button onClick={this.createPlayer}>Create Players</button>
+              <div>
+              <form onSubmit={this.submitBid}>
+                <label>
+                  Name:
+                  <input type="text" value={this.state.value} onChange={this.handleChange} /> </label>
+                  <input type="submit" value="Submit" />
+              </form>
+            
+              </div>
+              <button onClick={this.challenge}>Challenge</button>
+              <button onClick={this.showAllDice}>Show all dice</button>
+              <button onClick={this.shuffleAll}>Shuffle all dice</button>
+              </div>
+          </div>    
+          <div className='row'>
+            <div className='col-sm-12'>
             <table>
               <tbody>
                 {this.state.players.map((p, i) => {
                   var k = [];
-                  for (var j = 0; j < p.diceState.length; j++) {
+                  for (var j = 0; j < p.numDice; j++) {
                     k.push(<ReactDice 
                         key={j} 
                         numDice={1} 
@@ -483,8 +622,44 @@ class App extends React.Component {
                 })}
               </tbody>
             </table>
-          </div>
+            </div>
+          </div>      
         </div>
+      // <div className="App">
+      //     <div>
+      //       <div className='inline'><div>Current Player</div></div>
+      //       <div className='inline'><div style={style}></div></div>
+      //     </div>
+      //     {this.state.players.map((p, i) => <div key={i}>{p.diceState.toString()}</div>)}
+      //     <button onClick={this.roll}>Click</button>
+      //     <button onClick={this.showDice}>Show Dice</button>
+      //     <div>
+            // <table>
+            //   <tbody>
+            //     {this.state.players.map((p, i) => {
+            //       var k = [];
+            //       for (var j = 0; j < p.numDice; j++) {
+            //         k.push(<ReactDice 
+            //             key={j} 
+            //             numDice={1} 
+            //             faceColor={this.colors[i]} 
+            //             defaultRoll={p.diceState[j]}
+            //             disableIndividual={true}
+            //             dotColor={'#000000'}
+            //           />);
+            //       }
+            //       return (
+            //         <tr key={i}>
+            //           {k.map((t, idx) => {
+            //             return (<td key={idx}>{t}</td>)
+            //           })}
+            //         </tr>
+            //       )
+            //     })}
+            //   </tbody>
+            // </table>
+      //     </div>
+      //   </div>
       );
     }
     
