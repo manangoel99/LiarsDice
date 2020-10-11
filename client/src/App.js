@@ -5,7 +5,9 @@ import ReadString from './ReadString';
 import SetString from './SetString';
 import ReactDice from 'react-dice-complete'
 import 'react-dice-complete/dist/react-dice-complete.css'
-
+// import M from 'materialize-css'
+// import 'materialize-css/dist/css/materialize.min.css';
+import {DropdownButton, Dropdown, ButtonGroup} from 'react-bootstrap';
 // import Player from './Player'
 
 class Players {
@@ -28,7 +30,7 @@ class App extends React.Component {
   state = { 
     loading: true, 
     drizzleState: null, 
-    numPlayers: 4, 
+    numPlayers: 2, 
     players: [], 
     currPlayer : 0,
     displayDice : false,
@@ -61,6 +63,21 @@ class App extends React.Component {
     for (var i = 0; i < this.state.numPlayers; i++) {
       player.push(new Players());
     }
+    // M.AutoInit();
+    let dropdowns = document.querySelectorAll('.dropdown-trigger');
+    
+    let options = {
+        inDuration: 300,
+        outDuration: 300,
+        hover: true, // Activate on hover
+        coverTrigger: false, // Displays dropdown below the button
+    };
+    
+    // M.Dropdown.init(dropdowns, options);
+    // document.addEventListener('DOMContentLoaded', function() {
+    //   var elems = document.querySelectorAll('.dropdown-trigger');
+    //   var instances = M.Dropdown.init(elems, options);
+    // });
     this.setState({players: player});
   }
 
@@ -126,8 +143,9 @@ class App extends React.Component {
   }
 
   challenge = () => {
-    const {drizzle} = this.props;
-    const drizzleState = drizzle.store.getState();
+    console.log(this.props);
+    var {drizzle} = this.props;
+    var drizzleState = drizzle.store.getState();
     const contract = drizzle.contracts.LiarsDice1;
 
     // const dataKey = contract.methods["getAllDiceVals"].cacheCall({
@@ -136,13 +154,13 @@ class App extends React.Component {
     // });
     const challengeId = contract.methods['Challenge'].cacheSend({
       from : drizzleState.accounts[this.state.currPlayer],
-      gas: 300000
-    })
+      gas: 3000000
+    });
+
     this.setState({
       challengeId: challengeId,
       challengeStatus: false
     });
-    // console.log(drizzleState.contracts.LiarsDice1.storedData[dataKey].value);
   }
 
   getChallengeStatus = () => {
@@ -154,6 +172,7 @@ class App extends React.Component {
     console.log(txHash);
     // if transaction hash does not exist, don't display anything
     if (!txHash) return null;
+ 
     return `Challenge Status : ${drizzleState.transactions[txHash] && drizzleState.transactions[txHash].status}`
   }
 
@@ -165,23 +184,124 @@ class App extends React.Component {
       border: '1px',
       backgroundColor: this.colors[this.state.currPlayer]
     }
+    const circleStyle = {
+      width:'400px',
+      height:'400px',
+      borderRadius:'200px',
+      background: 'black',
+      position:'relative',
+      // left:'200px',
+      // top:'100px',
+      backgroundImage: `url(unnamed.jpg)`,
+      backgroundSize: 'cover'
+      // objectFit: 'cover',
+    }
+    var x0 = 197;
+    var y0 = 197;
+    var points = [];
+    for (var i = 0; i < this.state.numPlayers; i++) {
+      points.push([x0 + 200 * Math.cos(2 * Math.PI * i / this.state.numPlayers), y0 + 100 * Math.sin(2 * Math.PI * i / this.state.numPlayers)]);
+    }
+    // const pointStyle = {
+    //   left: 
+    // }
+    console.log(points);
     if (!this.state.displayDice) {
       return (
-        <div className="App">
-          <div>
-            <div className='inline'><div>Current Player</div></div>
-            <div className='inline'><div style={style}></div></div>
+        <div className="App container">
+          <div className="row">
+            <div className="col-sm-6">
+            <div style={circleStyle}>
+              {points.map((p, i) => {
+                if (i == this.state.currPlayer) {
+                  var pointStyle = {
+                    left: p[0] + 'px',
+                    top: p[1] + 'px',
+                    width:'10px',
+                    height:'10px',
+                    background: this.colors[i],
+                    borderRadius: '10px',
+                    position:'absolute',
+                  };
+                }
+                else {
+                  var pointStyle = {
+                    left: p[0] + 'px',
+                    top: p[1] + 'px',
+                    width:'10px',
+                    height:'10px',
+                    background: 'blue',
+                    borderRadius: '10px',
+                    position:'absolute',
+                  };
+                }  
+                return <div key={i} className='point' style={pointStyle}></div>
+              })}
+            </div>
+            </div>
+            <div  className='col-sm-6'>
+              <div>
+                <div className='inline'><div>Current Player</div></div>
+                <div className='inline'><div style={style}></div></div>
+              </div>
+              <div>
+              <DropdownButton
+                as={ButtonGroup}
+                key={"Value"}
+                id={`dropdown-variant-primary`}
+                title={"value"}
+              >
+                {[1, 2, 3, 4, 5, 6].map(val => {
+                  return (
+                    <Dropdown.Item eventKey={val}>{val}</Dropdown.Item>
+                  )
+                })}
+              </DropdownButton>
+              <DropdownButton
+                as={ButtonGroup}
+                key={"Count"}
+                id={`dropdown-variant-secondary`}
+                title={"Count"}
+              >
+                {Array.from(Array(5 * this.state.numPlayers).keys()).map(count => {
+                  return (
+                    <Dropdown.Item eventKey={count}>{count}</Dropdown.Item>
+                  )
+                })}
+              </DropdownButton>
+              </div>
+              {/* <DropdownButton id="dropdown-basic-button" title="Dropdown button"> */}
+                {/* {['Value', 'Count'].map(variant => {
+                  if (variant === 'Value') {
+                    return (
+                      <DropdownButton 
+                      as={ButtonGroup} 
+                      key={variant}
+                      id={`dropdown-variant-primary`}
+                      variant={variant.toLowerCase()}
+                      title={variant}
+                      >
+                        {}
+                      </DropdownButton>
+                    )
+                  }
+                })} */}
+                {/* <Dropdown.Item href="#/action-1">Action</Dropdown.Item>
+                <Dropdown.Item href="#/action-2">Another action</Dropdown.Item>
+                <Dropdown.Item href="#/action-3">Something else</Dropdown.Item> */}
+              {/* </DropdownButton> */}
+              {/* <div>Current Player : <div style={style}></div></div> */}
+              {this.state.players.map((p, i) => <div key={i}>{p.diceState.toString()}</div>)}
+              <button onClick={this.roll}>Click</button>
+              <button onClick={this.showDice}>Show Dice</button>
+              <button onClick={this.createPlayer}>Create Players</button>
+              <div>
+                <input type="text" onKeyDown={this.submitBid}/>
+              </div>
+              <button onClick={this.challenge}>Challenge</button>
+              <div>{this.getChallengeStatus()}</div>
+            </div>
           </div>
-          {/* <div>Current Player : <div style={style}></div></div> */}
-          {this.state.players.map((p, i) => <div key={i}>{p.diceState.toString()}</div>)}
-          <button onClick={this.roll}>Click</button>
-          <button onClick={this.showDice}>Show Dice</button>
-          <button onClick={this.createPlayer}>Create Players</button>
-          <div>
-            <input type="text" onKeyDown={this.submitBid}/>
-          </div>
-          <button onClick={this.challenge}>Challenge</button>
-          <div>{this.getChallengeStatus()}</div>
         </div>
       );
     }
