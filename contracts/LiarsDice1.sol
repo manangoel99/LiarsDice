@@ -36,7 +36,7 @@ contract LiarsDice1 {
     Bid currentBid;
 
     constructor() public {
-        numPlayers = 4;
+        numPlayers = 2;
         numDice = 5;
         playerCount = 0;
         currentBid = Bid(msg.sender, 0, 0);
@@ -82,7 +82,7 @@ contract LiarsDice1 {
         addressToPlayer[msg.sender].diceVals = _getRolls(addressToPlayer[msg.sender].numDiceLeft);
     }
 
-    function shuffleAll() private{
+    function shuffleAll() public{
         
         for(uint i = 0; i < numPlayers; i++) {
         	address adr = numToPlayersAddress[i];
