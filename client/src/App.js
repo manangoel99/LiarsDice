@@ -7,7 +7,7 @@ import ReactDice from 'react-dice-complete'
 import 'react-dice-complete/dist/react-dice-complete.css'
 // import M from 'materialize-css'
 // import 'materialize-css/dist/css/materialize.min.css';
-import {DropdownButton, Dropdown, ButtonGroup} from 'react-bootstrap';
+import {DropdownButton, Dropdown, ButtonGroup, Button} from 'react-bootstrap';
 // import Player from './Player'
 
 class Players {
@@ -95,6 +95,10 @@ class App extends React.Component {
 
   }
   handleChange(event) {    this.setState({value: event.target.value});  }
+
+  /**
+   * Accesses the createPlayer method of the contract to link accounts with players (register)
+   */
   createPlayer = () => {
     const {drizzle} = this.props;
     const drizzleState = drizzle.store.getState();
@@ -118,16 +122,9 @@ class App extends React.Component {
     this.unsubscribe();
   }
 
-  roll = () => {
-    var p = this.state.players;
-    p[this.state.currPlayer].roll()
-    this.setState({
-      players: p,
-      currPlayer: (this.state.currPlayer + 1) % (this.state.numPlayers),
-      displayDice: false
-    });
-  }
-
+  /**
+   * Update state of component so that the dice can be rendered
+   */
   showDice = () => {
     if (this.state.displayDice == false) {
       this.setState({
@@ -141,7 +138,13 @@ class App extends React.Component {
     }
     
   }
-
+  /**
+   * Function to call the submitBid method of the contract on clicking a button.
+   * First checks if there are any pending transactions and notifies the user
+   * to wait before those transactions are completed.
+   * Also checks if a player has won the game.
+   * @param {event} e 
+   */
   submitBid = e => {
     const {drizzle} = this.props;
     const drizzleState = drizzle.store.getState();
@@ -236,7 +239,9 @@ class App extends React.Component {
       console.log("please wait");
     }
   }
-
+  /**
+   * Calls the challenge method of the contract in order to fetch if the bid is correct or not
+   */
   challenge = () => {
     console.log(this.props);
     var {drizzle} = this.props;
@@ -263,7 +268,11 @@ class App extends React.Component {
     }
     // console.log(drizzleState.contracts.LiarsDice1.storedData[dataKey].value);
   }
-
+  /**
+   * Fetch all the values on the dice from the contract as well as the result of the challenge.
+   * It updates the state of the component to display the dice rendered using react-dice-complete
+   * It also decrements the number of dice a player has
+   */
   showAllDice = () => {
     const {drizzle} = this.props;
     const drizzleState = drizzle.store.getState();
@@ -341,7 +350,9 @@ class App extends React.Component {
       // }
     }
   }
-
+  /**
+   * Calls the shuffleAll method of the contract to shuffle the dice of all players
+   */
   shuffleAll = () => {
     const {drizzle} = this.props;
     const drizzleState = drizzle.store.getState();
@@ -355,19 +366,6 @@ class App extends React.Component {
     this.setState({b1: false});
     this.setState({b2: false});
     this.setState({displayDice: false});
-  }
-
-  getChallengeStatus = () => {
-    const {drizzle} = this.props;
-    const drizzleState = drizzle.store.getState();
-
-    // get the transaction hash using our saved `stackId`
-    const txHash = drizzleState.transactionStack[this.state.challengeId];
-    // console.log(txHash);
-    // if transaction hash does not exist, don't display anything
-    if (!txHash) return null;
- 
-    return `Challenge Status : ${drizzleState.transactions[txHash] && drizzleState.transactions[txHash].status}`
   }
 
   handleValUpdate = (val) => {
@@ -423,10 +421,10 @@ class App extends React.Component {
                   var pointStyle = {
                     left: p[0] + 'px',
                     top: p[1] + 'px',
-                    width:'10px',
-                    height:'10px',
+                    width:'20px',
+                    height:'20px',
                     background: this.colors[i],
-                    borderRadius: '10px',
+                    borderRadius: '20px',
                     position:'absolute',
                   };
                 }
@@ -503,16 +501,18 @@ class App extends React.Component {
               {/* </DropdownButton> */}
               {/* <div>Current Player : <div style={style}></div></div> */}
               {this.state.players.map((p, i) => <div key={i}>{p.diceState.toString()}</div>)}
-              {this.state.b3 && <button onClick={this.createPlayer}>Create Players</button>}
+              {this.state.b3 && <Button onClick={this.createPlayer}>Create Players</Button>}
+              <br />
+              <br />
               <div>
               <form onSubmit={this.submitBid}>
-                  <input type="submit" value="Submit" />
+                  <Button type="submit" value="Submit" >Submit</Button>
               </form>
-            
+              <br />
               </div>
-              <button onClick={this.challenge}>Challenge</button>
-              {this.state.b1 && <button onClick={this.showAllDice}>Show all dice</button>}
-              {this.state.b2 && <button onClick={this.shuffleAll}>Shuffle all dice</button>}
+              <Button onClick={this.challenge}>Challenge</Button>
+              {this.state.b1 && <Button onClick={this.showAllDice}>Show all dice</Button>}
+              {this.state.b2 && <Button onClick={this.shuffleAll}>Shuffle all dice</Button>}
               </div>
           </div>          
         </div>
