@@ -25,7 +25,7 @@ contract LiarsDice1 {
     }
 
     mapping (address => Bid) bids;
-    mapping (uint => address) numToPlayersAddress; 
+    mapping (uint => address) numToPlayersAddress;
     mapping (address => Player) addressToPlayer;
 
     address[] bidders;
@@ -35,9 +35,10 @@ contract LiarsDice1 {
     // Player[] players;
     Bid currentBid;
     address winner;
+    bytes32 overallHash;
 
     constructor() public {
-        numPlayers = 2;
+        numPlayers = 3;
         numDice = 2;
         playerCount = 0;
         currentBid = Bid(msg.sender, 0, 0);
@@ -87,12 +88,12 @@ contract LiarsDice1 {
     /**
     Roll the dice for every player during each round of the game
      */
-    function shuffleAll() public{
-        
-        for(uint i = 0; i < numPlayers; i++) {
-        	address adr = numToPlayersAddress[i];
-        	addressToPlayer[adr].diceVals = _getRolls(addressToPlayer[adr].numDiceLeft);
-        }
+    function shuffleAll(bytes32 hashVal) public{
+        overallHash = hashVal;
+        // for(uint i = 0; i < numPlayers; i++) {
+        // 	address adr = numToPlayersAddress[i];
+        // 	addressToPlayer[adr].diceVals = _getRolls(addressToPlayer[adr].numDiceLeft);
+        // }
     }
 
     /**
@@ -118,12 +119,13 @@ contract LiarsDice1 {
 
     If the bid is correct, the challenger loses a die and if it's incorrect the bidder loses a die.
      */
-    function Challenge() public{
+    function Challenge(uint [] memory allDiceValues) public{
         // require(status != ChallengeStatus.TWO, "Already challenged");
         // require(msg.sender != currentBid.addr, "Cannot challenge your own bid");
-
+        bytes32 _hash = keccak256(abi.encode(allDiceValues));
+        require(_hash == overallHash, "Hashes dont match");
         status = ChallengeStatus.TWO;
-        uint[] memory allDiceVals = getAllDiceVals();
+        uint[] memory allDiceVals = allDiceValues;
         for(uint i = 0; i < allDiceVals.length; i++){
             if(allDiceVals[i] == currentBid.value || allDiceVals[i] == 1){
                 countChallenge ++;
@@ -168,7 +170,7 @@ contract LiarsDice1 {
         }
         return ret;
     }
-    
+
     /**
     Getter method to fetch details of a player
     @return address         The address of the player
@@ -180,7 +182,7 @@ contract LiarsDice1 {
     function getPlayer() public view returns(address, string memory, uint, bool, uint[] memory) {
         return (msg.sender, addressToPlayer[msg.sender].name, addressToPlayer[msg.sender].numDiceLeft, addressToPlayer[msg.sender].stillPlaying, addressToPlayer[msg.sender].diceVals);
     }
-    
+
     /**
     Getter method to get details of a bid
 
@@ -191,7 +193,7 @@ contract LiarsDice1 {
     function getBid() public view returns(address, uint, uint) {
         return (currentBid.addr, currentBid.value, currentBid.count);
     }
-    
+
     // function getRolls() public view returns(uint[] memory) {
     //     return rolls[msg.sender];
     // }
