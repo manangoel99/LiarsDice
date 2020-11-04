@@ -34,10 +34,11 @@ contract LiarsDice1 {
     address prevBidder;
     // Player[] players;
     Bid currentBid;
+    address winner;
 
     constructor() public {
         numPlayers = 2;
-        numDice = 5;
+        numDice = 2;
         playerCount = 0;
         currentBid = Bid(msg.sender, 0, 0);
         status = ChallengeStatus.DEFAULT;

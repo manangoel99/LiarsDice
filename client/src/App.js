@@ -11,9 +11,12 @@ import {DropdownButton, Dropdown, ButtonGroup, Button} from 'react-bootstrap';
 // import Player from './Player'
 
 class Players {
-  constructor() {
-    this.diceState = [-1, -1, -1, -1, -1];
-    this.numDice = 5;
+  constructor(numDice) {
+    this.diceState = [];
+    for (var i = 0; i < numDice; i++) {
+      this.diceState.push(-1)
+    }
+    this.numDice = 2;
   }
   roll = () => {
     var t = [
@@ -47,6 +50,7 @@ class App extends React.Component {
     b2: false,
     b3: true,
     currentLoser: null,
+    numDice: 2,
   };
 
   diceComps = [];
@@ -73,7 +77,7 @@ class App extends React.Component {
     });
     var player = [];
     for (var i = 0; i < this.state.numPlayers; i++) {
-      player.push(new Players());
+      player.push(new Players(this.state.numDice));
     }
     // M.AutoInit();
     let dropdowns = document.querySelectorAll('.dropdown-trigger');
@@ -194,7 +198,7 @@ class App extends React.Component {
 
           var idx = (this.state.currPlayer + 1) % (this.state.numPlayers);
           console.log("a",idx);
-
+          console.log(this.state.players);
           while (this.state.players[idx].numDice === 0){
             idx = (idx+1) % this.state.numPlayers;
             console.log("a",idx);
@@ -210,16 +214,6 @@ class App extends React.Component {
       else{
         var bidbid = contract.methods["getBid"].cacheCall();
         console.log(contract)
-        // console.log(drizzleState.contracts.LiarsDice1.getBid[bidbid].value)
-        // console.log(bidbid)
-        var bidID = contract.methods["placeBid"].cacheSend(this.state.currBidValue, this.state.currBidCount, {
-          from: drizzleState.accounts[this.state.currPlayer],
-          gas: 300000
-        });
-          console.log("after placeBid 2");
-
-        this.setState({bidID});
-
         var idx = (this.state.currPlayer + 1) % (this.state.numPlayers);
         console.log("b",idx)
         while (this.state.players[idx].numDice === 0){
@@ -232,6 +226,20 @@ class App extends React.Component {
         if(idx == this.state.currPlayer){
           alert("player" + idx + " has won the game")
         }
+        else {
+          var bidID = contract.methods["placeBid"].cacheSend(this.state.currBidValue, this.state.currBidCount, {
+            from: drizzleState.accounts[this.state.currPlayer],
+            gas: 300000
+          });
+            console.log("after placeBid 2");
+  
+          this.setState({bidID});
+        }
+        // console.log(drizzleState.contracts.LiarsDice1.getBid[bidbid].value)
+        // console.log(bidbid)
+        
+
+        
       }
     }
     else{
@@ -296,46 +304,69 @@ class App extends React.Component {
         alert("Please wait")
       }
       else{
-        var players = this.state.players;
+        var players = this.state.players.slice();
         var diceVals = drizzleState.contracts.LiarsDice1.getAllDiceVals[alldice].value;
 
 
-        for (var i = 0; i < diceVals.length; i+=5) {
-          players[parseInt(i/5)].diceState[0] = diceVals[i];
-          players[parseInt(i/5)].diceState[1] = diceVals[i + 1];
-          players[parseInt(i/5)].diceState[2] = diceVals[i + 2];
-          players[parseInt(i/5)].diceState[3] = diceVals[i + 3];
-          players[parseInt(i/5)].diceState[4] = diceVals[i + 4];
+        for (var i = 0; i < diceVals.length; i+=this.state.numDice) {
+          // players[parseInt(i/5)].diceState[0] = diceVals[i];
+          // players[parseInt(i/5)].diceState[1] = diceVals[i + 1];
+          // players[parseInt(i/5)].diceState[2] = diceVals[i + 2];
+          // players[parseInt(i/5)].diceState[3] = diceVals[i + 3];
+          // players[parseInt(i/5)].diceState[4] = diceVals[i + 4];
+          var arr = [];
+          console.log(players)
+          for (var j = 0; j < this.state.numDice; j++) {
+            players[parseInt(i/this.state.numDice)].diceState[j] = diceVals[i + j];
+            arr.push(diceVals[i + j]);
+          }
 
-          var arr = [
-            diceVals[i],
-            diceVals[i + 1],
-            diceVals[i + 2],
-            diceVals[i + 3],
-            diceVals[i + 4]
-          ];
+          // var arr = [
+          //   diceVals[i],
+          //   diceVals[i + 1],
+          //   diceVals[i + 2],
+          //   diceVals[i + 3],
+          //   diceVals[i + 4]
+          // ];
 
-          // players[parseInt(i/5)].numDice = 5 - arr.filter(v => v === 0).length; 
+          players[parseInt(i/this.state.numDice)].numDice = this.state.numDice - arr.filter(v => v === 0).length; 
         }
-
-        this.setState({
-          players: players,
-          displayDice: true,
-        });
+        console.log("")
+        console.log(diceVals);
+        console.log(players);
+        // this.setState({
+        //   players: players,
+        //   displayDice: true,
+        // });
         // console.log(drizzleState.contracts.LiarsDice1.getAllDiceVals[alldice].value)
         console.log(drizzleState.contracts.LiarsDice1)
         console.log(drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat].value)
-        if (drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat].value[0] === true) {
+        if (drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat].value === true) {
           alert("Previous bid was incorrect!!! He loses one dice");
           var prevPlayer = this.state.currPlayer == 0 ? this.state.numPlayers - 1 : this.state.currPlayer - 1;
           console.log("pp",prevPlayer)
           players[prevPlayer].numDice -= 1;
+          if (players[prevPlayer].numDice == 0) {
+            var idx = this.state.currPlayer;
+            alert("player" + idx + " has won the game")
+          }
           this.setState({currentLoser: prevPlayer});
         }
         else {
           alert("Previous bid was correct!!! You lose one dice");
           players[this.state.currPlayer].numDice -= 1;
+          // if (players[this.state.currPlayer].numDice == 0) {
+          //   var idx = this.state.currPlayer == 0 ? this.state.numPlayers - 1 : this.state.currPlayer - 1;
+          //   alert("player" + idx + " has won the game")
+          // }
+          
           this.setState({currentLoser: this.state.currPlayer});
+        }
+        console.log(players, "VOOOO")
+        for (var i = 0; i < players.length; i++) {
+          if (players[i].numDice == 0) {
+            alert(i + " has lost the game");
+          }
         }
         this.setState({
           players: players,
@@ -472,9 +503,9 @@ class App extends React.Component {
                 id={`dropdown-variant-secondary`}
                 title={"Count"}
               >
-                {Array.from(Array(5 * this.state.numPlayers).keys()).map(count => {
+                {Array.from(Array(this.state.numDice * this.state.numPlayers).keys()).map(count => {
                   return (
-                    <Dropdown.Item onClick={() => this.handleCountUpdate(count)} key={count} eventKey={count}>{count}</Dropdown.Item>
+                    <Dropdown.Item onClick={() => this.handleCountUpdate(count + 1)} key={count + 1} eventKey={count + 1}>{count + 1}</Dropdown.Item>
                   )
                 })}
               </DropdownButton>
@@ -580,7 +611,7 @@ class App extends React.Component {
                 id={`dropdown-variant-secondary`}
                 title={"Count"}
               >
-                {Array.from(Array(5 * this.state.numPlayers).keys()).map(count => {
+                {Array.from(Array(this.state.numDice * this.state.numPlayers).keys()).map(count => {
                   return (
                     <Dropdown.Item onClick={() => this.handleCountUpdate(count)} key={count} eventKey={count}>{count}</Dropdown.Item>
                   )
@@ -628,7 +659,7 @@ class App extends React.Component {
                 {this.state.players.map((p, i) => {
                   var k = [];
                   var n = p.numDice;
-                  for (var j = 0; j < 5; j++) {
+                  for (var j = 0; j < this.state.numDice; j++) {
                     if(p.diceState[j] == 0){
                       continue;
                     }
