@@ -16,7 +16,7 @@ class Players {
     for (var i = 0; i < numDice; i++) {
       this.diceState.push(-1)
     }
-    this.numDice = 2;
+    this.numDice = numDice;
   }
   roll = () => {
     var t = [
@@ -116,9 +116,13 @@ class App extends React.Component {
       pID.push(stackId);
       // console.log(pID);
     }
-    this.setState({pID});
-    this.setState({b3: false});
+    // this.setState({pID});
+    // this.setState({b3: false});
     // console.log(this.state)
+    this.setState({
+      pID : pID, 
+      b3: false,
+    });
   }
 
 
@@ -165,6 +169,7 @@ class App extends React.Component {
         proceed += 1;
       }
     }
+    console.log("Inside Bid", this.state.players);
     if(proceed == this.state.numPlayers){
       console.log("you may continue");
       var string = this.state.value.split(" ");
@@ -180,35 +185,40 @@ class App extends React.Component {
           alert("Try again in few seconds.");
         }
         else if(drizzleState.transactions[txHash1].status == 'error'){
-          this.setState({bidID: -1})
-          this.setState({currPlayer: (this.state.currPlayer - 1 + this.state.numPlayers) % this.state.numPlayers})
+          // this.setState({bidID: -1})
+          // this.setState({currPlayer: (this.state.currPlayer - 1 + this.state.numPlayers) % this.state.numPlayers})
+          this.setState({
+            bidID: -1,
+            currPlayer: (this.state.currPlayer - 1 + this.state.numPlayers) % this.state.numPlayers,
+          });
           alert("Wrong bid placed, please bid again");
         }
         else{
           var bidbid = contract.methods["getBid"].cacheCall();
-          console.log(contract);
-          console.log(drizzleState.contracts.LiarsDice1.getBid[bidbid].value)
+          // console.log(contract);
+          // console.log(drizzleState.contracts.LiarsDice1.getBid[bidbid].value)
           // console.log(bidbid)
           var bidID = contract.methods["placeBid"].cacheSend(this.state.currBidValue, this.state.currBidCount, {
             from: drizzleState.accounts[this.state.currPlayer],
             gas: 300000
           });
           console.log("after placeBid 1");
-          this.setState({bidID});
+          // this.setState({bidID});
 
           var idx = (this.state.currPlayer + 1) % (this.state.numPlayers);
           console.log("a",idx);
-          console.log(this.state.players);
+          // console.log("Inside Challenge", this.state.players);
           while (this.state.players[idx].numDice === 0){
             idx = (idx+1) % this.state.numPlayers;
             console.log("a",idx);
           }
           if(idx == this.state.currPlayer){
-            alert("player" + idx + " has won the game")
+            alert("player" + idx + " has won the game");
           }
           this.setState({
-            currPlayer: idx
-          })
+            currPlayer: idx,
+            bidID: bidID
+          });
         }
       }
       else{
@@ -220,9 +230,9 @@ class App extends React.Component {
           idx = (idx+1) % this.state.numPlayers;
           console.log("b",idx)
         }
-        this.setState({
-          currPlayer: idx
-        })
+        // this.setState({
+        //   currPlayer: idx
+        // })
         if(idx == this.state.currPlayer){
           alert("player" + idx + " has won the game")
         }
@@ -233,7 +243,10 @@ class App extends React.Component {
           });
             console.log("after placeBid 2");
   
-          this.setState({bidID});
+          this.setState({
+            bidID: bidID,
+            currPlayer: idx,
+          });
         }
         // console.log(drizzleState.contracts.LiarsDice1.getBid[bidbid].value)
         // console.log(bidbid)
@@ -269,10 +282,14 @@ class App extends React.Component {
       const challengeId = contract.methods['Challenge'].cacheSend({
         from : drizzleState.accounts[this.state.currPlayer],
         gas: 300000
-      })
+      });
       // console.log(challengeId);
-      this.setState({challengeId});
-      this.setState({b1: true});
+      // this.setState({challengeId});
+      // this.setState({b1: true});
+      this.setState({
+        challengeId: challengeId,
+        b1: true,
+      });
     }
     // console.log(drizzleState.contracts.LiarsDice1.storedData[dataKey].value);
   }
@@ -293,75 +310,52 @@ class App extends React.Component {
     else{
       var alldice = contract.methods["getAllDiceVals"].cacheCall();
       var challengeStat = contract.methods["ChallengeResult"].cacheCall();
-      // console.log(alldice)
-      // console.log(drizzleState.contracts.LiarsDice1);
-      // var bidbid = contract.methods["getBid"].cacheCall();
-      // console.log(contract);
-      // console.log(drizzleState.contracts.LiarsDice1.getBid[bidbid].value)
-      // console.log(challengeStat)
-      // console.log(drizzleState.contracts.LiarsDice1)
+
       if(!drizzleState.contracts.LiarsDice1.getAllDiceVals[alldice] || !drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat]){
         alert("Please wait")
       }
       else{
         var players = this.state.players.slice();
         var diceVals = drizzleState.contracts.LiarsDice1.getAllDiceVals[alldice].value;
-
+        
+        console.log("Inside Show All Dice");
+        console.log(players);
+        console.log(diceVals);
 
         for (var i = 0; i < diceVals.length; i+=this.state.numDice) {
-          // players[parseInt(i/5)].diceState[0] = diceVals[i];
-          // players[parseInt(i/5)].diceState[1] = diceVals[i + 1];
-          // players[parseInt(i/5)].diceState[2] = diceVals[i + 2];
-          // players[parseInt(i/5)].diceState[3] = diceVals[i + 3];
-          // players[parseInt(i/5)].diceState[4] = diceVals[i + 4];
           var arr = [];
-          console.log(players)
           for (var j = 0; j < this.state.numDice; j++) {
             players[parseInt(i/this.state.numDice)].diceState[j] = diceVals[i + j];
             arr.push(diceVals[i + j]);
           }
-
-          // var arr = [
-          //   diceVals[i],
-          //   diceVals[i + 1],
-          //   diceVals[i + 2],
-          //   diceVals[i + 3],
-          //   diceVals[i + 4]
-          // ];
-
-          players[parseInt(i/this.state.numDice)].numDice = this.state.numDice - arr.filter(v => v === 0).length; 
+          // console.log("Inside Loop", i, arr, arr.filter(v => v === 0).length);
+          // players[parseInt(i/this.state.numDice)].numDice = this.state.numDice - arr.filter(v => v === 0).length; 
         }
-        console.log("")
-        console.log(diceVals);
+
         console.log(players);
-        // this.setState({
-        //   players: players,
-        //   displayDice: true,
-        // });
-        // console.log(drizzleState.contracts.LiarsDice1.getAllDiceVals[alldice].value)
+
         console.log(drizzleState.contracts.LiarsDice1)
         console.log(drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat].value)
+        var currentLoser = null;
         if (drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat].value === true) {
           alert("Previous bid was incorrect!!! He loses one dice");
           var prevPlayer = this.state.currPlayer == 0 ? this.state.numPlayers - 1 : this.state.currPlayer - 1;
           console.log("pp",prevPlayer)
-          players[prevPlayer].numDice -= 1;
-          if (players[prevPlayer].numDice == 0) {
-            var idx = this.state.currPlayer;
-            alert("player" + idx + " has won the game")
-          }
-          this.setState({currentLoser: prevPlayer});
-        }
-        else {
-          alert("Previous bid was correct!!! You lose one dice");
-          players[this.state.currPlayer].numDice -= 1;
-          // if (players[this.state.currPlayer].numDice == 0) {
-          //   var idx = this.state.currPlayer == 0 ? this.state.numPlayers - 1 : this.state.currPlayer - 1;
+          // players[prevPlayer].numDice -= 1;
+          // if (players[prevPlayer].numDice == 0) {
+          //   var idx = this.state.currPlayer;
           //   alert("player" + idx + " has won the game")
           // }
-          
-          this.setState({currentLoser: this.state.currPlayer});
+          currentLoser = prevPlayer;
         }
+        else {
+          // alert("Previous bid was correct!!! You lose one dice");
+          // players[this.state.currPlayer].numDice -= 1;
+          currentLoser = this.state.currPlayer;
+        }
+        players[currentLoser].numDice -= 1;
+        console.log(players, players[currentLoser]);
+        console.log("Current Loser ", currentLoser);
         console.log(players, "VOOOO")
         for (var i = 0; i < players.length; i++) {
           if (players[i].numDice == 0) {
@@ -371,14 +365,10 @@ class App extends React.Component {
         this.setState({
           players: players,
           displayDice: true,
+          b2: true,
+          currentLoser: currentLoser,
         });
-        this.setState({b2: true});
       }
-      // if(!drizzleState.contracts.LiarsDice1.ChallengeResult[challengeStat]){
-      //   alert("nahi hai nahi hai")
-      // }
-      // else{
-      // }
     }
   }
   /**
